@@ -1,6 +1,7 @@
 import { createSignal, onMount, For, Show } from 'solid-js';
 import { createStore, unwrap } from "solid-js/store";
 import { NodeComponent } from './Node';
+import { Modal } from './Modal'; // Import the new Modal component
 
 export interface Node {
   id: string; // Will be the table name
@@ -26,6 +27,8 @@ function App() {
   const [toasts, setToasts] = createStore<ToastMessage[]>([]);
   const [mousePosition, setMousePosition] = createSignal({ x: 100, y: 100 });
   const [uploadedTablesCount, setUploadedTablesCount] = createSignal(0);
+  const [isModalOpen, setIsModalOpen] = createSignal(false);
+  const [tableList, setTableList] = createSignal<string[]>([]);
   let worker: Worker;
 
   // Helper function to recalculate uploaded tables count
@@ -69,6 +72,10 @@ function App() {
           );
           setUploadedTablesCount(prev => prev + 1);
         }
+      } else if (type === 'TABLE_LIST') {
+        setTableList(payload.tables || []);
+        // Also update the count, as this is the most accurate source
+        setUploadedTablesCount(payload.tables.length);
 
       } else if (type === 'DATABASE_EXPORTED') {
         downloadFile(payload.dbBytes, `database-backup.sqlite`, 'application/x-sqlite3');
@@ -133,6 +140,11 @@ function App() {
     });
   };
 
+  const handleViewTables = () => {
+    worker.postMessage({ type: 'LIST_TABLES' });
+    setIsModalOpen(true);
+  };
+
   const handleUploadToSQLite = (nodeToUpload: Node) => {
     if (!isReady()) return;
 
@@ -190,18 +202,20 @@ function App() {
       URL.revokeObjectURL(url);
   };
 
-  return (
-    <div 
-      class="app-container" 
+return (
+    <div
+      class="app-container"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div class="controls">
-        <button onClick={handleSaveDatabase} disabled={!isReady()}>Save Database</button>
+        <button onClick={handleSaveDatabase} disabled={!isReady()}>Save DB</button>
+        <button onClick={handleViewTables} disabled={!isReady()}>View Tables</button>
         <span>Nodes: {nodes.length}</span>
-        <span>Uploaded to SQLite: {uploadedTablesCount()}</span>
+        <span>Uploaded: {uploadedTablesCount()}</span>
       </div>
+
       <div class="toast-container">
         <For each={toasts}>
           {(toast) => (
@@ -209,10 +223,11 @@ function App() {
           )}
         </For>
       </div>
+
       <For each={nodes}>
         {(node) => {
           return (
-            <NodeComponent 
+            <NodeComponent
               node={node}
               onPositionChange={handlePositionChange}
               onUploadToSQLite={handleUploadToSQLite}
@@ -220,9 +235,18 @@ function App() {
           );
         }}
       </For>
+
       <Show when={showDropOverlay()}>
         <div class="drop-overlay">Drop CSV File Here</div>
       </Show>
+
+      {/* The Modal component is now correctly self-closed */}
+      <Modal
+        isOpen={isModalOpen()}
+        title="Uploaded SQLite Tables"
+        tableNames={tableList()}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }
