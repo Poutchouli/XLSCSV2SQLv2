@@ -1,0 +1,152 @@
+import { createSignal, onMount, For, Show } from 'solid-js';
+import { createStore } from "solid-js/store";
+import { NodeComponent } from './Node';
+
+export interface Node {
+  id: string; // Will be the table name
+  title: string;
+  x: number;
+  y: number;
+  schema: { name: string, type: string }[];
+  rowCount: number;
+}
+
+function App() {
+  const [nodes, setNodes] = createStore<Node[]>([]);
+  const [isReady, setIsReady] = createSignal(false);
+  const [showDropOverlay, setShowDropOverlay] = createSignal(false);
+  let worker: Worker;
+
+  onMount(() => {
+    worker = new Worker(new URL('./db.worker.ts', import.meta.url), { type: 'module' });
+
+    worker.onmessage = (event) => {
+      const { type, payload } = event.data;
+
+      if (type === 'DB_READY') {
+        setIsReady(true);
+      } else if (type === 'DB_ERROR') {
+        console.error('Database initialization error:', payload);
+        alert('Failed to initialize database: ' + payload.error);
+      } else if (type === 'NODE_CREATED') {
+        setNodes([...nodes, payload.node]);
+      } else if (type === 'CSV_EXPORTED') {
+        downloadFile(payload.csvString, `${payload.tableName}.csv`, 'text/csv');
+      } else if (type === 'DATABASE_EXPORTED') {
+        downloadFile(payload.dbBytes, `database-backup.sqlite`, 'application/x-sqlite3');
+      }
+    };
+
+    // Add keyboard event listener
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'n' || e.key === 'N') {
+        handleCreateTestTable();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    
+    // Cleanup event listener
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  });
+
+  const handlePositionChange = (id: string, x: number, y: number) => {
+    setNodes(node => node.id === id, { x, y });
+    worker.postMessage({ type: 'UPDATE_POSITION', payload: { id, x, y } });
+  };
+
+  const handleSaveAsCsv = (tableName: string) => {
+    worker.postMessage({ type: 'EXPORT_TABLE_CSV', payload: { tableName } });
+  };
+  
+  const handleSaveDatabase = () => {
+    worker.postMessage({ type: 'EXPORT_DATABASE' });
+  };
+
+  const handleCreateTestTable = () => {
+    if (!isReady()) return;
+    
+    // Generate random position
+    const position = {
+      x: Math.random() * 500 + 100,
+      y: Math.random() * 400 + 100
+    };
+    
+    worker.postMessage({ 
+      type: 'CREATE_TEST_TABLE', 
+      payload: { position } 
+    });
+  };
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    setShowDropOverlay(true);
+  };
+  
+  const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault();
+    setShowDropOverlay(false);
+  };
+
+  const handleDrop = async (e: DragEvent) => {
+    e.preventDefault();
+    setShowDropOverlay(false);
+    const file = e.dataTransfer?.files?.[0];
+
+    if (file && file.name.endsWith('.csv')) {
+      const buffer = await file.arrayBuffer();
+      const tableName = file.name.replace('.csv', '');
+      worker.postMessage({
+        type: 'IMPORT_CSV',
+        payload: {
+          fileBuffer: buffer,
+          tableName: tableName,
+          dropPosition: { x: e.clientX, y: e.clientY }
+        }
+      });
+    } else {
+      alert("Please drop a valid .csv file.");
+    }
+  };
+  
+  const downloadFile = (content: any, fileName: string, mimeType: string) => {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div 
+      class="app-container" 
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div class="controls">
+        <button onClick={handleSaveDatabase} disabled={!isReady()}>Save Database</button>
+      </div>
+      <For each={nodes}>
+        {(node) => (
+          <NodeComponent 
+            node={node}
+            onPositionChange={handlePositionChange}
+            onSaveAsCsv={handleSaveAsCsv}
+          />
+        )}
+      </For>
+      <Show when={showDropOverlay()}>
+        <div class="drop-overlay">Drop CSV File Here</div>
+      </Show>
+    </div>
+  );
+}
+
+export default App;

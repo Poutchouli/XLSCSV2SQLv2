@@ -1,0 +1,60 @@
+.node-card {
+  position: absolute;
+  background: #2a2d35;
+  border: 1px solid #454954;
+  border-radius: 8px;
+  width: 250px;
+  min-height: 150px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  user-select: none;
+  cursor: grab;
+  z-index: 10;
+}
+
+.node-card:active {
+  cursor: grabbing;
+  z-index: 1000;
+}
+
+.node-header {
+  background: #3c404c;
+  padding: 8px 12px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.node-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-header button {
+  background: #505562;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.node-header button:hover {
+  background: #616774;
+}
+
+.node-content {
+  padding: 12px;
+}
+
+.schema-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #ccc;
+}
