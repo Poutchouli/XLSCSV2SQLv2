@@ -20,28 +20,21 @@ function App() {
   let worker: Worker;
 
   onMount(() => {
-    console.log("Creating worker...");
     worker = new Worker(new URL('./db.worker.ts', import.meta.url), { type: 'module' });
-    console.log("Worker created:", worker);
 
     worker.onmessage = (event) => {
-      console.log("Main thread received message:", event.data);
       const { type, payload } = event.data;
 
       if (type === 'DB_READY') {
-        console.log("Database is ready!");
         setIsReady(true);
       } else if (type === 'DB_ERROR') {
         console.error('Database initialization error:', payload);
         alert('Failed to initialize database: ' + payload.error);
       } else if (type === 'NODE_CREATED') {
-        console.log("Node created:", payload.node);
-        console.log("Current nodes before update:", nodes);
         // Use the functional form of setNodes to ensure we're updating the latest state.
         // This prevents issues with stale closures in the onmessage callback.
         setNodes(prevNodes => {
           const newNodes = [...prevNodes, payload.node];
-          console.log("New nodes after update:", newNodes);
           return newNodes;
         });
       } else if (type === 'DATABASE_EXPORTED') {
@@ -85,18 +78,15 @@ function App() {
   };
 
   const handleCreateTestTable = () => {
-    console.log("handleCreateTestTable called, isReady:", isReady());
     if (!isReady()) return;
     
     // Use current mouse position
     const position = mousePosition();
-    console.log("Creating test table at position:", position);
     
     worker.postMessage({ 
       type: 'CREATE_TEST_TABLE', 
       payload: { position } 
     });
-    console.log("Message sent to worker");
   };
 
   const handleDragOver = (e: DragEvent) => {
@@ -155,7 +145,6 @@ function App() {
       </div>
       <For each={nodes}>
         {(node) => {
-          console.log("Rendering node:", node);
           return (
             <NodeComponent 
               node={node}

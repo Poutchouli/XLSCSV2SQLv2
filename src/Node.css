@@ -4,7 +4,7 @@
   border: 1px solid #454954;
   border-radius: 8px;
   width: 250px;
-  min-height: 150px;
+  min-height: 180px; /* Increased from 150px to accommodate row count */
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
   user-select: none;
   cursor: grab;
@@ -36,13 +36,14 @@
 
 .node-content {
   padding: 12px;
+  padding-bottom: 32px; /* Added bottom padding to make room for row count */
   position: relative;
 }
 
 .data-toggle-btn-small {
   position: absolute;
-  top: 130px; /* Fixed position from top of node */
-  right: 8px;
+  top: 45px; /* Adjusted from 40px to account for better spacing */
+  right: 8px; /* Moved slightly inward from 4px */
   background: #505562;
   border: none;
   color: white;
@@ -62,16 +63,70 @@
   background: #616774;
 }
 
+.schema-display {
+  margin-bottom: 12px;
+}
+
+.schema-display h5 {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.schema-toggle-btn {
+  background: #3c404c;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .schema-list {
   list-style: none;
   padding: 0;
   margin: 0;
   font-size: 0.8rem;
   color: #ccc;
+  border: 1px solid #454954;
+  border-radius: 4px;
+  background: #2a2d35;
+}
+
+.schema-list li {
+  padding: 4px 8px;
+  border-bottom: 1px solid #3c404c;
+}
+
+.schema-list li:last-child {
+  border-bottom: none;
+}
+
+.schema-list li:hover {
+  background: #3c404c;
+}
+
+.schema-more {
+  font-style: italic;
+  color: #999 !important;
+  padding: 4px 8px;
+  border-bottom: none !important;
+}
+
+.schema-more:hover {
+  background: transparent !important;
+  cursor: default;
 }
 
 .data-preview {
   margin-top: 12px;
+  margin-bottom: 8px; /* Added bottom margin to ensure space above row count */
   border-top: 1px solid #454954;
   padding-top: 8px;
 }
@@ -83,7 +138,7 @@
 }
 
 .data-table {
-  max-height: 200px;
+  max-height: 250px; /* Increased from 200px to show more rows */
   overflow: auto;
 }
 
@@ -113,4 +168,18 @@
 .data-table td {
   background: #2a2d35;
   color: #ccc;
+}
+
+.row-count {
+  position: absolute;
+  bottom: 4px;
+  left: 8px;
+  right: 8px;
+  font-size: 0.7rem;
+  color: #888;
+  text-align: center;
+  border-top: 1px solid #454954;
+  padding-top: 4px;
+  background: #2a2d35;
+  height: 20px; /* Fixed height to ensure consistent spacing */
 }

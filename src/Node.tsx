@@ -53,10 +53,13 @@ export function NodeComponent(props: NodeProps) {
         <h4>{props.node.title}</h4>
       </div>
       <div class="node-content">
-        <p>{props.node.rowCount} rows</p>
-        <ul class="schema-list">
-          {props.node.schema.map(col => <li>{col.name} ({col.type})</li>)}
-        </ul>
+        <div class="schema-display">
+          <h5>Fields ({props.node.schema.length}):</h5>
+          <ul class="schema-list">
+            {props.node.schema.slice(0, 5).map(col => <li>{col.name} ({col.type})</li>)}
+            {props.node.schema.length > 5 && <li class="schema-more">... and {props.node.schema.length - 5} more</li>}
+          </ul>
+        </div>
         <Show when={showData()}>
           <div class="data-preview">
             <h5>First 5 rows:</h5>
@@ -82,6 +85,9 @@ export function NodeComponent(props: NodeProps) {
       <button onClick={toggleDataView} class="data-toggle-btn-small">
         {showData() ? '▼' : '▶'}
       </button>
+      <div class="row-count">
+        {props.node.rowCount || 0} rows
+      </div>
     </div>
   );
 }
