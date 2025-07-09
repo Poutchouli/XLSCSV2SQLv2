@@ -15,6 +15,7 @@ function App() {
   const [nodes, setNodes] = createStore<Node[]>([]);
   const [isReady, setIsReady] = createSignal(false);
   const [showDropOverlay, setShowDropOverlay] = createSignal(false);
+  const [mousePosition, setMousePosition] = createSignal({ x: 100, y: 100 });
   let worker: Worker;
 
   onMount(() => {
@@ -44,11 +45,18 @@ function App() {
       }
     };
 
+    // Add mouse move event listener to track mouse position
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
     document.addEventListener('keydown', handleKeyPress);
+    document.addEventListener('mousemove', handleMouseMove);
     
-    // Cleanup event listener
+    // Cleanup event listeners
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
+      document.removeEventListener('mousemove', handleMouseMove);
     };
   });
 
@@ -68,11 +76,8 @@ function App() {
   const handleCreateTestTable = () => {
     if (!isReady()) return;
     
-    // Generate random position
-    const position = {
-      x: Math.random() * 500 + 100,
-      y: Math.random() * 400 + 100
-    };
+    // Use current mouse position
+    const position = mousePosition();
     
     worker.postMessage({ 
       type: 'CREATE_TEST_TABLE', 
