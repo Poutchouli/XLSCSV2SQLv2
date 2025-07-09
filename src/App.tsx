@@ -9,6 +9,7 @@ export interface Node {
   y: number;
   schema: { name: string, type: string }[];
   rowCount: number;
+  data: Record<string, any>[]; // First 5 rows of data
 }
 
 function App() {
@@ -43,8 +44,6 @@ function App() {
           console.log("New nodes after update:", newNodes);
           return newNodes;
         });
-      } else if (type === 'CSV_EXPORTED') {
-        downloadFile(payload.csvString, `${payload.tableName}.csv`, 'text/csv');
       } else if (type === 'DATABASE_EXPORTED') {
         downloadFile(payload.dbBytes, `database-backup.sqlite`, 'application/x-sqlite3');
       }
@@ -79,10 +78,6 @@ function App() {
   const handlePositionChange = (id: string, x: number, y: number) => {
     setNodes(node => node.id === id, { x, y });
     worker.postMessage({ type: 'UPDATE_POSITION', payload: { id, x, y } });
-  };
-
-  const handleSaveAsCsv = (tableName: string) => {
-    worker.postMessage({ type: 'EXPORT_TABLE_CSV', payload: { tableName } });
   };
   
   const handleSaveDatabase = () => {
@@ -165,7 +160,6 @@ function App() {
             <NodeComponent 
               node={node}
               onPositionChange={handlePositionChange}
-              onSaveAsCsv={handleSaveAsCsv}
             />
           );
         }}

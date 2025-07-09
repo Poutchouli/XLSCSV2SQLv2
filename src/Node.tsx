@@ -1,14 +1,15 @@
 import type { Node } from './App';
 import './Node.css';
+import { createSignal, Show } from 'solid-js';
 
 type NodeProps = {
   node: Node;
   onPositionChange: (id: string, x: number, y: number) => void;
-  onSaveAsCsv: (tableName: string) => void;
 };
 
 export function NodeComponent(props: NodeProps) {
   let noteRef: HTMLDivElement | undefined;
+  const [showData, setShowData] = createSignal(false);
   
   const handleMouseDown = (e: MouseEvent) => {
     if ((e.target as HTMLElement).tagName === 'BUTTON') return; // Don't drag when clicking buttons
@@ -33,6 +34,10 @@ export function NodeComponent(props: NodeProps) {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const toggleDataView = () => {
+    setShowData(!showData());
+  };
+
   return (
     <div
       ref={noteRef}
@@ -46,14 +51,37 @@ export function NodeComponent(props: NodeProps) {
     >
       <div class="node-header">
         <h4>{props.node.title}</h4>
-        <button onClick={() => props.onSaveAsCsv(props.node.id)}>Save</button>
       </div>
       <div class="node-content">
         <p>{props.node.rowCount} rows</p>
         <ul class="schema-list">
           {props.node.schema.map(col => <li>{col.name} ({col.type})</li>)}
         </ul>
+        <Show when={showData()}>
+          <div class="data-preview">
+            <h5>First 5 rows:</h5>
+            <div class="data-table">
+              <table>
+                <thead>
+                  <tr>
+                    {props.node.schema.map(col => <th>{col.name}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {props.node.data.map((row, index) => (
+                    <tr>
+                      {props.node.schema.map(col => <td>{row[col.name] || ''}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </Show>
       </div>
+      <button onClick={toggleDataView} class="data-toggle-btn-small">
+        {showData() ? '▼' : '▶'}
+      </button>
     </div>
   );
 }

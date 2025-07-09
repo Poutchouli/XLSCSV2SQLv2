@@ -47,10 +47,6 @@ self.onmessage = async (e: MessageEvent) => {
       // For simplicity, we don't persist position in this clean start.
       // In a real app, you would save it to a metadata table.
       break;
-    case 'EXPORT_TABLE_CSV':
-      console.log("Handling CSV export...");
-      handleExportCsv(payload);
-      break;
     case 'EXPORT_DATABASE':
       console.log("Handling database export...");
       handleExportDatabase();
@@ -88,9 +84,12 @@ function getUniqueTableName(baseName: string): string {
 }
 
 function handleImportCsv(payload: any) {
+  console.log("handleImportCsv called with payload:", payload);
+  
   const { fileBuffer, tableName: originalTableName, dropPosition } = payload;
   const fileText = new TextDecoder().decode(fileBuffer);
   
+  console.log("Parsing CSV file...");
   const parseResult = Papa.parse(fileText, {
       header: true,
       skipEmptyLines: true,
@@ -99,41 +98,31 @@ function handleImportCsv(payload: any) {
   const headers = parseResult.meta.fields!;
   const data = parseResult.data as Record<string, any>[];
   
-  // Get unique table name
-  const tableName = getUniqueTableName(originalTableName);
+  console.log("CSV parsed successfully, headers:", headers, "rows:", data.length);
   
-  db.exec(`DROP TABLE IF EXISTS "${tableName}";`);
-  const createTableSql = `CREATE TABLE "${tableName}" (${headers.map(h => `"${h}" TEXT`).join(', ')});`;
-  db.exec(createTableSql);
-
-  // Use a transaction for performance and prepared statements for security.
-  try {
-    db.exec('BEGIN TRANSACTION;');
-    const placeholders = headers.map(() => '?').join(',');
-    const insertSql = `INSERT INTO "${tableName}" (${headers.map(h => `"${h}"`).join(',')}) VALUES (${placeholders});`;
-    
-    data.forEach(row => {
-        const values = headers.map(h => row[h] || null); // Use null for missing values
-        db.exec({ sql: insertSql, bind: values });
-    });
-
-    db.exec('COMMIT;');
-  } catch (error) {
-    db.exec('ROLLBACK;');
-    console.error('Error during bulk insert, transaction rolled back:', error);
-    // Optionally, post an error message back to the main thread
-    return;
-  }
-
-  // Create and post the node object back to the main thread
-  createAndPostNode(tableName, dropPosition);
-}
-
-function handleExportCsv(payload: any) {
-    const { tableName } = payload;
-    const rows = db.exec(`SELECT * FROM "${tableName}";`, { rowMode: 'object' });
-    const csvString = Papa.unparse(rows);
-    self.postMessage({ type: 'CSV_EXPORTED', payload: { csvString, tableName } });
+  // Create a test node with CSV data (without SQLite for now)
+  const tableName = `${originalTableName}_${Date.now()}`;
+  
+  const nodeData = {
+    id: tableName,
+    title: tableName,
+    x: dropPosition.x,
+    y: dropPosition.y,
+    schema: headers.map(h => ({ name: h, type: 'TEXT' })),
+    rowCount: data.length,
+    data: data.slice(0, 5), // First 5 rows
+  };
+  
+  console.log("Posting NODE_CREATED message with CSV data:", nodeData);
+  
+  self.postMessage({
+    type: 'NODE_CREATED',
+    payload: {
+      node: nodeData
+    }
+  });
+  
+  console.log("NODE_CREATED message posted successfully");
 }
 
 function handleCreateTestTable(payload: any) {
@@ -144,6 +133,16 @@ function handleCreateTestTable(payload: any) {
   const tableName = `test_table_${Date.now()}`;
   
   console.log("Creating test node without SQLite...");
+  
+  // Generate sample data
+  const sampleData: Record<string, any>[] = [];
+  for (let i = 0; i < 5; i++) {
+    sampleData.push({
+      X: (Math.random() * 100).toFixed(2),
+      Y: (Math.random() * 100).toFixed(2),
+      Z: (Math.random() * 100).toFixed(2)
+    });
+  }
   
   // Create a test node with dummy data
   const nodeData = {
@@ -157,6 +156,7 @@ function handleCreateTestTable(payload: any) {
       { name: 'Z', type: 'TEXT' }
     ],
     rowCount: 5,
+    data: sampleData,
   };
   
   console.log("Posting NODE_CREATED message with test data:", nodeData);
