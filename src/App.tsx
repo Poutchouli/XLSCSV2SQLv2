@@ -25,7 +25,14 @@ function App() {
   const [showDropOverlay, setShowDropOverlay] = createSignal(false);
   const [toasts, setToasts] = createStore<ToastMessage[]>([]);
   const [mousePosition, setMousePosition] = createSignal({ x: 100, y: 100 });
+  const [uploadedTablesCount, setUploadedTablesCount] = createSignal(0);
   let worker: Worker;
+
+  // Helper function to recalculate uploaded tables count
+  const recalculateUploadedCount = () => {
+    const count = nodes.filter(node => node.isUploadedToSQLite).length;
+    setUploadedTablesCount(count);
+  };
 
   onMount(() => {
     worker = new Worker(new URL('./db.worker.ts', import.meta.url), { type: 'module' });
@@ -45,16 +52,22 @@ function App() {
           const newNodes = [...prevNodes, payload.node];
           return newNodes;
         });
+        
+        // Update uploaded counter if the new node is already uploaded
+        if (payload.node.isUploadedToSQLite) {
+          setUploadedTablesCount(prev => prev + 1);
+        }
       } else if (type === 'UPLOAD_STATUS') {
         addToast(payload.message, payload.success ? 'success' : 'error');
         
-        // If successful, mark the node as uploaded
+        // If successful, mark the node as uploaded and increment counter
         if (payload.success && payload.tableName) {
           setNodes(
             (node) => node.id === payload.tableName,
             "isUploadedToSQLite",
             true
           );
+          setUploadedTablesCount(prev => prev + 1);
         }
 
       } else if (type === 'DATABASE_EXPORTED') {
@@ -187,6 +200,7 @@ function App() {
       <div class="controls">
         <button onClick={handleSaveDatabase} disabled={!isReady()}>Save Database</button>
         <span>Nodes: {nodes.length}</span>
+        <span>Uploaded to SQLite: {uploadedTablesCount()}</span>
       </div>
       <div class="toast-container">
         <For each={toasts}>
