@@ -34,6 +34,36 @@
   text-overflow: ellipsis;
 }
 
+.upload-btn {
+  background: #5a9fd4;
+  border: none;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.upload-btn:hover {
+  background: #4a7c59;
+}
+
+.upload-btn:disabled {
+  background: #28a745;
+  cursor: default;
+}
+
+.upload-btn:disabled:hover {
+  background: #28a745;
+}
+
 .node-content {
   padding: 12px;
   padding-bottom: 32px; /* Added bottom padding to make room for row count */
