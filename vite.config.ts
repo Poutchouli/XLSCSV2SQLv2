@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [solidPlugin()],
@@ -23,12 +22,14 @@ export default defineConfig({
   assetsInclude: ['**/*.wasm'],
   build: {
     rollupOptions: {
-      external: ['@sqlite.org/sqlite-wasm'],
-    }
-  },
-  resolve: {
-    alias: {
-      '@sqlite.org/sqlite-wasm': resolve(__dirname, 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.mjs')
+      output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && assetInfo.name.endsWith('.wasm')) {
+            return 'assets/[name]-[hash][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        }
+      }
     }
   }
 });

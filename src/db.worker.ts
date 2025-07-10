@@ -11,7 +11,16 @@ const fullDataCache = new Map<string, Record<string, any>[]>();
 
 async function init() {
   try {
-    sqlite3 = await sqlite3InitModule();
+    // Initialize SQLite with proper WASM configuration
+    sqlite3 = await sqlite3InitModule({
+      // Specify the path to the WASM file
+      locateFile: (file: string) => {
+        if (file.endsWith('.wasm')) {
+          return '/sqlite3.wasm';
+        }
+        return file;
+      }
+    });
     db = new sqlite3.oo1.DB(':memory:', 'c');
     self.postMessage({ type: 'DB_READY' });
   } catch (error) {
