@@ -18,10 +18,23 @@ export function Modal(props: ModalProps) {
             <button class="modal-close-btn" onClick={props.onClose}>×</button>
           </div>
           <div class="modal-body">
-            <Show when={props.tableNames.length > 0} fallback={<p>No tables have been uploaded to SQLite yet.</p>}>
+                        <Show when={props.tableNames.length > 0} fallback={<p>No tables have been uploaded to SQLite yet.</p>}>
               <ul class="table-list">
                 <For each={props.tableNames}>
-                  {(name) => <li>{name}</li>}
+                  {(name) => (
+                    // Add a container 'li' to hold the name and the button
+                    <li class="table-list-item">
+                      <span>{name}</span>
+                      {/* Add the delete button */}
+                      <button
+                        class="delete-table-btn"
+                        title={`Delete ${name} table`}
+                        onClick={() => props.onDelete(name)}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  )}
                 </For>
               </ul>
             </Show>

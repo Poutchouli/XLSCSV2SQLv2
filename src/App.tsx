@@ -2,6 +2,9 @@ import { createSignal, onMount, For, Show } from 'solid-js';
 import { createStore, unwrap } from "solid-js/store";
 import { NodeComponent } from './Node';
 import { Modal } from './Modal'; // Import the new Modal component
+import { XlsOptionsModal, type SheetInfo } from './XlsOptionsModal';
+import * as XLSX from 'xlsx';
+import Papa from 'papaparse'; // We need PapaParse here now
 
 export interface Node {
   id: string; // Will be the table name
@@ -29,7 +32,20 @@ function App() {
   const [uploadedTablesCount, setUploadedTablesCount] = createSignal(0);
   const [isModalOpen, setIsModalOpen] = createSignal(false);
   const [tableList, setTableList] = createSignal<string[]>([]);
+  const [isXlsModalOpen, setIsXlsModalOpen] = createSignal(false);
+  const [xlsSheets, setXlsSheets] = createSignal<SheetInfo[]>([]);
+  const [dropPosition, setDropPosition] = createSignal({ x: 0, y: 0 });
   let worker: Worker;
+
+const handleDeleteTable = (tableName: string) => {
+    // Ask the user for confirmation before deleting
+    if (confirm(`Are you sure you want to permanently delete the table "${tableName}"?`)) {
+      worker.postMessage({
+        type: 'DROP_TABLE',
+        payload: { tableName }
+      });
+    }
+  };
 
   // Helper function to recalculate uploaded tables count
   const recalculateUploadedCount = () => {
@@ -86,25 +102,23 @@ function App() {
       console.error("Worker error:", error);
     };
 
-    // Add keyboard event listener
-    const handleKeyPress = (e: KeyboardEvent) => {
+    // Create AbortController for cleanup
+    const abortController = new AbortController();
+
+    // Add event listeners with anonymous functions
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'n' || e.key === 'N') {
         handleCreateTestTable();
       }
-    };
+    }, { signal: abortController.signal });
 
-    // Add mouse move event listener to track mouse position
-    const handleMouseMove = (e: MouseEvent) => {
+    document.addEventListener('mousemove', (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-
-    document.addEventListener('keydown', handleKeyPress);
-    document.addEventListener('mousemove', handleMouseMove);
+    }, { signal: abortController.signal });
     
-    // Cleanup event listeners
+    // Cleanup event listeners with single abort call
     return () => {
-      document.removeEventListener('keydown', handleKeyPress);
-      document.removeEventListener('mousemove', handleMouseMove);
+      abortController.abort();
     };
   });
 
@@ -169,12 +183,19 @@ function App() {
     setShowDropOverlay(false);
   };
 
-  const handleDrop = async (e: DragEvent) => {
+ const handleDrop = async (e: DragEvent) => {
     e.preventDefault();
     setShowDropOverlay(false);
     const file = e.dataTransfer?.files?.[0];
 
-    if (file && file.name.endsWith('.csv')) {
+    if (!file) return;
+
+    // Store drop position
+    setDropPosition({ x: e.clientX, y: e.clientY });
+
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+
+    if (fileExtension === 'csv') {
       const buffer = await file.arrayBuffer();
       const tableName = file.name.replace('.csv', '');
       worker.postMessage({
@@ -185,8 +206,19 @@ function App() {
           dropPosition: { x: e.clientX, y: e.clientY }
         }
       });
+    } else if (fileExtension === 'xls' || fileExtension === 'xlsx') {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheets: SheetInfo[] = workbook.SheetNames.map(name => {
+        const sheet = workbook.Sheets[name];
+        const data = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+        return { name, data };
+      });
+
+      setXlsSheets(sheets);
+      setIsXlsModalOpen(true);
     } else {
-      alert("Please drop a valid .csv file.");
+      addToast("Please drop a valid .csv or .xls/.xlsx file.", 'error');
     }
   };
   
@@ -201,6 +233,53 @@ function App() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
   };
+
+    const handleXlsImport = (selectedSheets: SheetInfo[], rowsToIgnore: number, separator: string) => {
+    const pos = dropPosition();
+
+    for (const sheet of selectedSheets) {
+      // Skip the specified number of rows
+      const dataToProcess = sheet.data.slice(rowsToIgnore);
+      if (dataToProcess.length === 0) continue;
+
+      // Use the first row as headers and the rest as data
+      const headers = dataToProcess[0];
+      const dataRows = dataToProcess.slice(1);
+
+      // Convert the array-of-arrays to an array-of-objects, which PapaParse can unparse
+      const dataAsObjects = dataRows.map(row => {
+        const obj: Record<string, any> = {};
+        headers.forEach((header, i) => {
+          obj[header] = row[i];
+        });
+        return obj;
+      });
+
+      // Use PapaParse to create a CSV string. This is a robust way to handle formatting.
+      const csvString = Papa.unparse(dataAsObjects, {
+        header: true,
+        delimiter: separator,
+      });
+      
+      const fileBuffer = new TextEncoder().encode(csvString).buffer;
+
+      // Send to the worker just like a regular CSV
+      worker.postMessage({
+        type: 'IMPORT_CSV',
+        payload: {
+          fileBuffer: fileBuffer,
+          tableName: sheet.name, // Use sheet name as table name
+          dropPosition: { x: pos.x, y: pos.y }
+        }
+      });
+
+      // Offset the next node slightly
+      pos.x += 30;
+      pos.y += 30;
+      setDropPosition(pos);
+    }
+  };
+
 
 return (
     <div
@@ -246,6 +325,14 @@ return (
         title="Uploaded SQLite Tables"
         tableNames={tableList()}
         onClose={() => setIsModalOpen(false)}
+        // Pass the new handler function as a prop
+        onDelete={handleDeleteTable}
+      />
+      <XlsOptionsModal
+        isOpen={isXlsModalOpen()}
+        sheets={xlsSheets()}
+        onClose={() => setIsXlsModalOpen(false)}
+        onImport={handleXlsImport}
       />
     </div>
   );

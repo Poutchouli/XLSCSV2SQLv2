@@ -44,6 +44,9 @@ self.onmessage = async (e: MessageEvent) => {
     case 'EXPORT_DATABASE':
       handleExportDatabase();
       break;
+      case 'DROP_TABLE':
+      handleDropTable(payload);
+      break;
     default:
       console.log("Unknown message type:", type);
   }
@@ -278,6 +281,35 @@ function handleListTables() {
       payload: {
         success: false,
         message: `Error fetching table list: ${(error as Error).message}`
+      }
+    });
+  }
+}
+
+function handleDropTable(payload: { tableName: string }) {
+  const { tableName } = payload;
+  if (!db) {
+    self.postMessage({ type: 'UPLOAD_STATUS', payload: { success: false, message: 'Database not ready.' } });
+    return;
+  }
+  try {
+    db.exec(`DROP TABLE IF EXISTS "${tableName}"`);
+    self.postMessage({
+      type: 'UPLOAD_STATUS',
+      payload: {
+        success: true,
+        message: `Table "${tableName}" dropped successfully.`
+      }
+    });
+    // After dropping, immediately send the updated list of tables back
+    handleListTables();
+  } catch (error) {
+    console.error(`Error dropping table ${tableName}:`, error);
+    self.postMessage({
+      type: 'UPLOAD_STATUS',
+      payload: {
+        success: false,
+        message: `Error dropping table "${tableName}": ${(error as Error).message}`
       }
     });
   }

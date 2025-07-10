@@ -68,3 +68,38 @@ body {
   z-index: 1;
   pointer-events: none;
 }
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 300px;
+  pointer-events: none;
+}
+
+.toast {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  text-align: right;
+  animation: fadeInOut 5s ease-in-out forwards;
+  word-wrap: break-word;
+}
+
+.toast.success {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.toast.error {
+  color: rgba(255, 120, 120, 0.8);
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}

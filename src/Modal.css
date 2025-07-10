@@ -62,3 +62,99 @@
   margin-bottom: 8px;
   font-family: 'Courier New', Courier, monospace;
 }
+
+.import-controls {
+  display: flex;
+  gap: 20px;
+  background: #3c404c;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.import-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.import-controls input,
+.import-controls select {
+  background: #2a2d35;
+  color: white;
+  border: 1px solid #454954;
+  border-radius: 3px;
+  padding: 4px;
+}
+
+.sheet-container {
+  border: 1px solid #454954;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.sheet-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.modal-footer {
+  border-top: 1px solid #454954;
+  padding-top: 15px;
+  margin-top: 15px;
+  text-align: right;
+}
+
+.modal-footer button {
+  background-color: #5a9fd4;
+  border: none;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.modal-footer button:hover {
+  background-color: #4a7c59;
+}
+
+.modal-footer button:disabled {
+  background-color: #444;
+  cursor: not-allowed;
+}
+
+.table-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #3c404c;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.delete-table-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.delete-table-btn:hover {
+  opacity: 1;
+}
