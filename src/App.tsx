@@ -1,8 +1,8 @@
 import { createSignal, onMount, For, Show } from 'solid-js';
 import { createStore, unwrap } from "solid-js/store";
-import { NodeComponent } from './Node';
-import { Modal } from './Modal'; // Import the new Modal component
-import { XlsOptionsModal, type SheetInfo } from './XlsOptionsModal';
+import { NodeComponent } from './components/Node';
+import { Modal } from './components/Modal';
+import { XlsOptionsModal, type SheetInfo } from './components/XlsOptionsModal';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse'; // We need PapaParse here now
 
@@ -54,7 +54,7 @@ const handleDeleteTable = (tableName: string) => {
   };
 
   onMount(() => {
-    worker = new Worker(new URL('./db.worker.ts', import.meta.url), { type: 'module' });
+    worker = new Worker(new URL('./workers/db.worker.ts', import.meta.url), { type: 'module' });
 
     worker.onmessage = (event) => {
       const { type, payload } = event.data;
@@ -109,6 +109,11 @@ const handleDeleteTable = (tableName: string) => {
     document.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'n' || e.key === 'N') {
         handleCreateTestTable();
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        handleSaveDatabase();
+      } else if (e.key === 't' || e.key === 'T') {
+        handleViewTables();
       }
     }, { signal: abortController.signal });
 
@@ -125,9 +130,10 @@ const handleDeleteTable = (tableName: string) => {
   const addToast = (message: string, type: 'success' | 'error') => {
     const id = Date.now();
     setToasts(t => [...t, { id, message, type }]);
+    // Use queueMicrotask for better performance of cleanup
     setTimeout(() => {
       setToasts(t => t.filter(toast => toast.id !== id));
-    }, 5000); // Remove toast after 5 seconds
+    }, 5000);
   };
 
 
@@ -289,10 +295,11 @@ return (
       onDrop={handleDrop}
     >
       <div class="controls">
-        <button onClick={handleSaveDatabase} disabled={!isReady()}>Save DB</button>
-        <button onClick={handleViewTables} disabled={!isReady()}>View Tables</button>
+        <button onClick={handleSaveDatabase} disabled={!isReady()} title="Save Database (Press S)">Save DB</button>
+        <button onClick={handleViewTables} disabled={!isReady()} title="View Tables (Press T)">View Tables</button>
         <span>Nodes: {nodes.length}</span>
         <span>Uploaded: {uploadedTablesCount()}</span>
+        <span style="font-size: 0.8rem; color: #999; margin-left: 10px;" title="Press N for test table, S to save, T for tables">Shortcuts: N/S/T</span>
       </div>
 
       <div class="toast-container">

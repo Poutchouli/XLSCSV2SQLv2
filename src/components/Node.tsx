@@ -1,6 +1,6 @@
-import type { Node } from './App';
+import type { Node } from '../App';
 import './Node.css';
-import { createSignal, Show } from 'solid-js';
+import { createSignal, Show, createMemo } from 'solid-js';
 
 type NodeProps = {
   node: Node;
@@ -13,6 +13,10 @@ export function NodeComponent(props: NodeProps) {
   const { node } = props;
   let noteRef: HTMLDivElement | undefined;
   const [showData, setShowData] = createSignal(false);
+  
+  // Memoize computed values to improve performance
+  const visibleSchemaFields = createMemo(() => node.schema.slice(0, 5));
+  const additionalFieldsCount = createMemo(() => Math.max(0, node.schema.length - 5));
   
   const handleMouseDown = (e: MouseEvent) => {
     if ((e.target as HTMLElement).tagName === 'BUTTON') return; // Don't drag when clicking buttons
@@ -71,8 +75,8 @@ export function NodeComponent(props: NodeProps) {
         <div class="schema-display">
           <h5>Fields ({node.schema.length}):</h5>
           <ul class="schema-list">
-            {node.schema.slice(0, 5).map(col => <li>{col.name} ({col.type})</li>)}
-            {node.schema.length > 5 && <li class="schema-more">... and {node.schema.length - 5} more</li>}
+            {visibleSchemaFields().map(col => <li>{col.name} ({col.type})</li>)}
+            {additionalFieldsCount() > 0 && <li class="schema-more">... and {additionalFieldsCount()} more</li>}
           </ul>
         </div>
         <Show when={showData()}>

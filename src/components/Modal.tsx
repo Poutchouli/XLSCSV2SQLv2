@@ -6,6 +6,7 @@ type ModalProps = {
   title: string;
   tableNames: string[];
   onClose: () => void;
+  onDelete: (tableName: string) => void;
 };
 
 export function Modal(props: ModalProps) {

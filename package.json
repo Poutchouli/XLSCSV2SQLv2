@@ -1,12 +1,28 @@
 {
   "name": "sql-canvas",
-  "version": "1.0.0",
-  "description": "A clean visual SQL environment",
+  "version": "1.0.1",
+  "description": "A visual SQL environment for CSV/Excel data exploration and SQLite interaction",
+  "author": "Your Name",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "docker:build": "docker build -t sql-canvas .",
+    "docker:run": "docker run -p 3000:80 sql-canvas",
+    "docker:dev": "docker-compose --profile dev up",
+    "docker:prod": "docker-compose up -d --build"
   },
+  "keywords": [
+    "sql", 
+    "csv", 
+    "excel", 
+    "sqlite", 
+    "data-visualization", 
+    "solidjs", 
+    "typescript"
+  ],
   "dependencies": {
     "@sqlite.org/sqlite-wasm": "^3.50.1-build1",
     "papaparse": "^5.4.1",
